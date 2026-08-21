@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>パスワード生成アプリ</title>
+<style>
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f7f6;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    color: #333;
+  }
+  .card {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 30px;
+    box-sizing: border-box;
+  }
+  .result-container {
+    background: #f4f4f4;
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  #result {
+    font-size: 1.8em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    word-break: break-all;
+  }
+  .btn-reload {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #333;
+  }
+  .btn-reload:hover { opacity: 0.7; }
+  .btn-copy {
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 15px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 30px;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+  .btn-copy:hover { background: #005bb5; }
+  .control-group { margin-bottom: 25px; }
+  .control-header {
+    font-weight: bold;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  input[type="range"] {
+    flex-grow: 1;
+    cursor: pointer;
+  }
+  .length-input {
+    width: 60px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    color: #333;
+  }
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .checkbox-label input {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="result-container">
+    <div id="result"></div>
+    <button class="btn-reload" onclick="generate()" title="別のパスワードを生成">↻</button>
+  </div>
+
+  <button class="btn-copy" onclick="copyPassword()">パスワードのコピー</button>
+
+  <div class="control-group">
+    <div class="control-header">パスワードの長さ (4〜30文字)</div>
+    <div class="slider-container">
+      <input type="range" id="length-slider" min="4" max="30" value="12" oninput="updateLengthFromSlider()">
+      <!-- ★ onblur（カーソルが外れた時）の処理を追加しました -->
+      <input type="number" id="length-input" class="length-input" min="4" max="30" value="12" oninput="updateLengthFromInput()" onblur="finalizeLength()">
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="control-header">パスワードを解読されにくくする</div>
+    <div class="checkbox-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="inc-lower" checked onchange="generate()"> 小文字
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="inc-upper" checked onchange="generate()"> 大文字
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="inc-number" checked onchange="generate()"> 数字
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="inc-symbol" onchange="generate()"> 記号 (!@#$%-_)
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+  // スライダーを動かした時の処理
+  function updateLengthFromSlider() {
+    const val = document.getElementById('length-slider').value;
+    document.getElementById('length-input').value = val;
+    generate();
+  }
+
+  // ★ 入力中の処理（文字を打っている最中）
+  function updateLengthFromInput() {
+    let val = parseInt(document.getElementById('length-input').value);
+    
+    // 4〜30の正常な範囲に入っている時だけ、スライダーとパスワードを更新する
+    // （「1」などを打っている途中はあえて無視して待つ）
+    if (val >= 4 && val <= 30) {
+      document.getElementById('length-slider').value = val;
+      generate();
+    }
+  }
+
+  // ★ 入力が終わった時の処理（テキストボックスから別の場所をクリックした時など）
+  function finalizeLength() {
+    let inputEl = document.getElementById('length-input');
+    let val = parseInt(inputEl.value);
+
+    // 空っぽや数字以外なら一旦12に戻す
+    if (isNaN(val)) val = 12;
+    // 上限・下限の強制補正を「入力が終わったタイミング」で行う
+    if (val < 4) val = 4;
+    if (val > 30) val = 30;
+
+    inputEl.value = val;
+    document.getElementById('length-slider').value = val;
+    generate();
+  }
+
+  // パスワード生成ロジック
+  function generate() {
+    let chars = "";
+    if (document.getElementById('inc-lower').checked) chars += "abcdefghijklmnopqrstuvwxyz";
+    if (document.getElementById('inc-upper').checked) chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (document.getElementById('inc-number').checked) chars += "0123456789";
+    if (document.getElementById('inc-symbol').checked) chars += "!@#$%-_";
+
+    if (chars === "") {
+      document.getElementById('result').innerText = "エラー: 文字を選択";
+      return;
+    }
+
+    let password = "";
+    // パスワード生成時は常にスライダーの値を信頼する（入力途中の変な数字を防ぐため）
+    let length = parseInt(document.getElementById('length-slider').value);
+    
+    for(let i = 0; i < length; i++) {
+      password += chars[Math.floor(Math.random() * chars.length)];
+    }
+    
+    document.getElementById('result').innerText = password;
+  }
+
+  // コピー機能
+  function copyPassword() {
+    const text = document.getElementById('result').innerText;
+    if(text.includes("エラー")) return;
+    navigator.clipboard.writeText(text);
+    alert("コピーしました！");
+  }
+
+  generate();
+</script>
+
+</body>
+</html>
