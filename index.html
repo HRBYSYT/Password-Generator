@@ -2,24 +2,35 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<!-- ★ ここを変更：拡大縮小を禁止してネイティブアプリの挙動に合わせました -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>パスワード生成アプリ</title>
 <style>
+  /* ★ スクロールと引っ張り（バウンス）を完全に禁止する設定 */
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior-y: none; /* iOSの引っ張り更新などを防ぐ */
+  }
+  
   body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background-color: #f4f7f6;
     display: flex;
     justify-content: center;
-    padding: 20px;
+    /* ★ 画面の中央に配置しつつ、少し余白を持たせる */
+    align-items: flex-start;
+    padding-top: 5vh; 
     color: #333;
-    /* ★ おまけ：文字を長押しした時にテキストが選択されないようにする設定（よりアプリらしくなります） */
     -webkit-user-select: none;
     user-select: none;
+    box-sizing: border-box;
   }
+  
   .card {
     background: white;
-    width: 100%;
+    width: 90%; /* ★ スマホ向けに幅を調整 */
     max-width: 600px;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -36,12 +47,11 @@
     margin-bottom: 20px;
   }
   #result {
-    font-size: 20px; 
+    font-size: 19px; 
     font-weight: bold;
     letter-spacing: 1px;
     word-break: break-all;
     line-height: 1.3;
-    /* パスワード部分だけはコピーできるように選択可能にしておく */
     -webkit-user-select: text;
     user-select: text;
   }
@@ -66,7 +76,6 @@
     margin-bottom: 30px;
     font-weight: bold;
     transition: 0.2s;
-    /* ★ おまけ：タップした時のハイライトを消す */
     -webkit-tap-highlight-color: transparent;
   }
   .btn-copy:hover { background: #005bb5; }
@@ -94,7 +103,6 @@
     font-size: 16px;
     text-align: center;
     color: #333;
-    /* ★ おまけ：入力枠もタップ時のハイライトを消す */
     -webkit-tap-highlight-color: transparent;
   }
   .checkbox-group {
@@ -107,7 +115,6 @@
     align-items: center;
     cursor: pointer;
     font-size: 15px;
-    /* ★ おまけ：タップ時のハイライトを消す */
     -webkit-tap-highlight-color: transparent;
   }
   .checkbox-label input {
