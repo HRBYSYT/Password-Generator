@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ★ ここを変更：拡大縮小を禁止してネイティブアプリの挙動に合わせました -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>パスワード生成アプリ</title>
 <style>
   body {
@@ -12,6 +13,9 @@
     justify-content: center;
     padding: 20px;
     color: #333;
+    /* ★ おまけ：文字を長押しした時にテキストが選択されないようにする設定（よりアプリらしくなります） */
+    -webkit-user-select: none;
+    user-select: none;
   }
   .card {
     background: white;
@@ -31,13 +35,15 @@
     justify-content: space-between;
     margin-bottom: 20px;
   }
-  /* ★文字サイズと間隔をスマホに最適化しました */
   #result {
     font-size: 24px; 
     font-weight: bold;
     letter-spacing: 1px;
     word-break: break-all;
     line-height: 1.3;
+    /* パスワード部分だけはコピーできるように選択可能にしておく */
+    -webkit-user-select: text;
+    user-select: text;
   }
   .btn-reload {
     background: none;
@@ -60,6 +66,8 @@
     margin-bottom: 30px;
     font-weight: bold;
     transition: 0.2s;
+    /* ★ おまけ：タップした時のハイライトを消す */
+    -webkit-tap-highlight-color: transparent;
   }
   .btn-copy:hover { background: #005bb5; }
   .control-group { margin-bottom: 25px; }
@@ -86,8 +94,9 @@
     font-size: 16px;
     text-align: center;
     color: #333;
+    /* ★ おまけ：入力枠もタップ時のハイライトを消す */
+    -webkit-tap-highlight-color: transparent;
   }
-  /* ★チェックボックスを縦並びにしました */
   .checkbox-group {
     display: flex;
     flex-direction: column; 
@@ -98,6 +107,8 @@
     align-items: center;
     cursor: pointer;
     font-size: 15px;
+    /* ★ おまけ：タップ時のハイライトを消す */
+    -webkit-tap-highlight-color: transparent;
   }
   .checkbox-label input {
     margin-right: 12px;
@@ -137,7 +148,6 @@
       <label class="checkbox-label">
         <input type="checkbox" id="inc-number" checked onchange="generate()"> 数字
       </label>
-      <!-- スクリーンショットに合わせてテキストを変更しています -->
       <label class="checkbox-label">
         <input type="checkbox" id="inc-symbol" onchange="generate()"> 記号 (!@#$%-_)
       </label>
@@ -193,19 +203,16 @@
     document.getElementById('result').innerText = password;
   }
 
-  // ★コピー時の演出をネイティブアプリ風に修正しました
   function copyPassword() {
     const text = document.getElementById('result').innerText;
     if(text.includes("エラー")) return;
     navigator.clipboard.writeText(text);
     
-    // ボタンの見た目を変える
     const btn = document.querySelector('.btn-copy');
     const originalText = btn.innerText;
     btn.innerText = "コピーしました！";
-    btn.style.background = "#28a745"; // 緑色に
+    btn.style.background = "#28a745"; 
     
-    // 2秒後に元の状態に戻す
     setTimeout(() => {
       btn.innerText = originalText;
       btn.style.background = "#0066cc";
