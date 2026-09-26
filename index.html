@@ -344,7 +344,7 @@
     
     const btn = document.querySelector('.btn-copy');
     const originalText = btn.innerText;
-    btn.innerText = "コピーしました！";
+    btn.innerText = "コピーしました";
     btn.style.background = "#28a745"; 
     
     setTimeout(() => {
@@ -406,7 +406,7 @@
       copyBtn.innerText = "コピー";
       copyBtn.onclick = function() {
         navigator.clipboard.writeText(pwd);
-        copyBtn.innerText = "完了!";
+        copyBtn.innerText = "完了";
         copyBtn.style.background = "#28a745";
         setTimeout(() => {
           copyBtn.innerText = "コピー";
