@@ -6,13 +6,13 @@
 <title>パスワード生成アプリ</title>
 <link rel="apple-touch-icon" href="Password_Generation.jpg">
 <style>
-  /* ★ スクロールと引っ張り（バウンス）を完全に禁止する設定 */
+  /* スクロールと引っ張り（バウンス）を完全に禁止する設定 */
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
     overflow: hidden;
-    overscroll-behavior-y: none; /* iOSの引っ張り更新などを防ぐ */
+    overscroll-behavior-y: none;
   }
   
   body {
@@ -20,7 +20,6 @@
     background-color: #f4f7f6;
     display: flex;
     justify-content: center;
-    /* ★ 画面の中央に配置しつつ、少し余白を持たせる */
     align-items: flex-start;
     padding-top: 5vh; 
     color: #333;
@@ -31,12 +30,14 @@
   
   .card {
     background: white;
-    width: 90%; /* ★ スマホ向けに幅を調整 */
+    width: 90%; 
     max-width: 600px;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     padding: 30px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
   .result-container {
     background: #f4f4f4;
@@ -124,6 +125,107 @@
     height: 18px;
     cursor: pointer;
   }
+
+  /* ★ 履歴ボタンのデザイン */
+  .btn-history {
+    background: none;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    padding: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+    transition: 0.2s;
+    margin-top: 10px;
+  }
+  .btn-history:hover { background: #f0f0f0; }
+
+  /* ★ 履歴表示用のモーダル（ポップアップ）設定 */
+  .modal {
+    display: none; 
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 16px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh; /* 画面に収める */
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+  }
+  .modal-body {
+    overflow-y: auto; /* 履歴が多い場合はここだけスクロール */
+    flex-grow: 1;
+    margin-bottom: 15px;
+  }
+  .history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .history-list li {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    word-break: break-all;
+    font-size: 15px;
+    font-family: monospace;
+  }
+  .history-list button {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .history-list button:hover { background: #005bb5; }
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .btn-close {
+    background: #eee;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    flex-grow: 1;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-clear {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -159,6 +261,27 @@
       <label class="checkbox-label">
         <input type="checkbox" id="inc-symbol" onchange="generate()"> 記号 (!@#$%-_)
       </label>
+    </div>
+  </div>
+
+  <!-- ★ 履歴ボタンを追加 -->
+  <button class="btn-history" onclick="toggleHistory(true)">📋 コピー履歴を表示</button>
+</div>
+
+<!-- ★ 履歴表示用のモーダル -->
+<div id="historyModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>コピー履歴 (直近20件)</span>
+    </div>
+    <div class="modal-body">
+      <ul id="historyList" class="history-list">
+        <!-- ここに履歴が入ります -->
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-clear" onclick="clearHistory()">履歴を削除</button>
+      <button class="btn-close" onclick="toggleHistory(false)">閉じる</button>
     </div>
   </div>
 </div>
@@ -216,6 +339,9 @@
     if(text.includes("エラー")) return;
     navigator.clipboard.writeText(text);
     
+    // ★ コピーされたら履歴に保存する処理を追加
+    saveToHistory(text);
+    
     const btn = document.querySelector('.btn-copy');
     const originalText = btn.innerText;
     btn.innerText = "コピーしました！";
@@ -227,6 +353,80 @@
     }, 2000);
   }
 
+  // ====== ★ 履歴機能の処理 ======
+  const HISTORY_KEY = "pwd_history";
+  const MAX_HISTORY = 20; // 保存する最大件数
+
+  function saveToHistory(password) {
+    // ローカルストレージから既存の履歴を取得（なければ空の配列）
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    
+    // 連続して同じものをコピーした場合は追加しない
+    if (history[0] === password) return;
+
+    // 先頭に新しいパスワードを追加
+    history.unshift(password);
+    
+    // 最大件数を超えたら古いものを削除
+    if (history.length > MAX_HISTORY) {
+      history.pop();
+    }
+    
+    // 再び保存
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }
+
+  function toggleHistory(show) {
+    const modal = document.getElementById('historyModal');
+    if (show) {
+      renderHistory();
+      modal.style.display = "flex";
+    } else {
+      modal.style.display = "none";
+    }
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    
+    list.innerHTML = ""; // 一旦クリア
+    
+    if (history.length === 0) {
+      list.innerHTML = "<li style='justify-content:center; color:#999;'>履歴がありません</li>";
+      return;
+    }
+
+    // 履歴を展開
+    history.forEach((pwd, index) => {
+      const li = document.createElement('li');
+      li.innerText = pwd;
+      
+      const copyBtn = document.createElement('button');
+      copyBtn.innerText = "コピー";
+      copyBtn.onclick = function() {
+        navigator.clipboard.writeText(pwd);
+        copyBtn.innerText = "完了!";
+        copyBtn.style.background = "#28a745";
+        setTimeout(() => {
+          copyBtn.innerText = "コピー";
+          copyBtn.style.background = "#0066cc";
+        }, 1500);
+      };
+      
+      li.appendChild(copyBtn);
+      list.appendChild(li);
+    });
+  }
+
+  function clearHistory() {
+    if (confirm("すべての履歴を削除しますか？")) {
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+    }
+  }
+
+  // 初期化時の生成
   generate();
 </script>
 
