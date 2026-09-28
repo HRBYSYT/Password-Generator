@@ -126,7 +126,7 @@
     cursor: pointer;
   }
 
-  /* ★ 履歴ボタンのデザイン */
+  /* 履歴ボタンのデザイン */
   .btn-history {
     background: none;
     color: #555;
@@ -142,7 +142,7 @@
   }
   .btn-history:hover { background: #f0f0f0; }
 
-  /* ★ 履歴表示用のモーダル（ポップアップ）設定 */
+  /* 履歴表示用のモーダル（ポップアップ）設定 */
   .modal {
     display: none; 
     position: fixed;
@@ -161,7 +161,7 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    max-height: 80vh; /* 画面に収める */
+    max-height: 80vh; 
   }
   .modal-header {
     display: flex;
@@ -171,7 +171,7 @@
     font-weight: bold;
   }
   .modal-body {
-    overflow-y: auto; /* 履歴が多い場合はここだけスクロール */
+    overflow-y: auto; 
     flex-grow: 1;
     margin-bottom: 15px;
   }
@@ -264,11 +264,11 @@
     </div>
   </div>
 
-  <!-- ★ 履歴ボタンを追加 -->
-  <button class="btn-history" onclick="toggleHistory(true)">コピー履歴を表示</button>
+  <!-- 履歴ボタン -->
+  <button class="btn-history" onclick="toggleHistory(true)">📋 コピー履歴を表示</button>
 </div>
 
-<!-- ★ 履歴表示用のモーダル -->
+<!-- 履歴表示用のモーダル -->
 <div id="historyModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -313,25 +313,55 @@
   }
 
   function generate() {
-    let chars = "";
-    if (document.getElementById('inc-lower').checked) chars += "abcdefghijklmnopqrstuvwxyz";
-    if (document.getElementById('inc-upper').checked) chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    if (document.getElementById('inc-number').checked) chars += "0123456789";
-    if (document.getElementById('inc-symbol').checked) chars += "!@#$%-_";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const num = "0123456789";
+    const sym = "!@#$%-_";
 
-    if (chars === "") {
+    let pool = "";
+    let requiredChars = [];
+
+    // チェックされている文字種から、必ず1文字ずつ「必須文字」として確保する
+    if (document.getElementById('inc-lower').checked) {
+      pool += lower;
+      requiredChars.push(lower[Math.floor(Math.random() * lower.length)]);
+    }
+    if (document.getElementById('inc-upper').checked) {
+      pool += upper;
+      requiredChars.push(upper[Math.floor(Math.random() * upper.length)]);
+    }
+    if (document.getElementById('inc-number').checked) {
+      pool += num;
+      requiredChars.push(num[Math.floor(Math.random() * num.length)]);
+    }
+    if (document.getElementById('inc-symbol').checked) {
+      pool += sym;
+      requiredChars.push(sym[Math.floor(Math.random() * sym.length)]);
+    }
+
+    if (pool === "") {
       document.getElementById('result').innerText = "エラー: 文字を選択";
       return;
     }
 
-    let password = "";
     let length = parseInt(document.getElementById('length-slider').value);
     
-    for(let i = 0; i < length; i++) {
-      password += chars[Math.floor(Math.random() * chars.length)];
+    // パスワードの文字配列（まずは必須文字を入れる）
+    let passwordArray = [...requiredChars];
+
+    // 指定された長さになるまで、残りの文字をランダムに埋める
+    for (let i = requiredChars.length; i < length; i++) {
+      passwordArray.push(pool[Math.floor(Math.random() * pool.length)]);
     }
-    
-    document.getElementById('result').innerText = password;
+
+    // 文字の並び順をシャッフルする（Fisher-Yates法）
+    for (let i = passwordArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [passwordArray[i], passwordArray[j]] = [passwordArray[j], passwordArray[i]];
+    }
+
+    // 配列を文字列に戻して表示
+    document.getElementById('result').innerText = passwordArray.join('');
   }
 
   function copyPassword() {
@@ -339,12 +369,12 @@
     if(text.includes("エラー")) return;
     navigator.clipboard.writeText(text);
     
-    // ★ コピーされたら履歴に保存する処理を追加
+    // コピーされたら履歴に保存する
     saveToHistory(text);
     
     const btn = document.querySelector('.btn-copy');
     const originalText = btn.innerText;
-    btn.innerText = "コピーしました";
+    btn.innerText = "コピーしました！";
     btn.style.background = "#28a745"; 
     
     setTimeout(() => {
@@ -353,7 +383,7 @@
     }, 2000);
   }
 
-  // ====== ★ 履歴機能の処理 ======
+  // ====== 履歴機能の処理 ======
   const HISTORY_KEY = "pwd_history";
   const MAX_HISTORY = 20; // 保存する最大件数
 
@@ -406,7 +436,7 @@
       copyBtn.innerText = "コピー";
       copyBtn.onclick = function() {
         navigator.clipboard.writeText(pwd);
-        copyBtn.innerText = "完了";
+        copyBtn.innerText = "完了!";
         copyBtn.style.background = "#28a745";
         setTimeout(() => {
           copyBtn.innerText = "コピー";
